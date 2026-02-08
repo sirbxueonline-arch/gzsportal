@@ -136,6 +136,20 @@ async function resolveUserFromSession(sessionUser: SessionUser): Promise<AppUser
   });
 
   if (!invite) {
+    await prisma.user.upsert({
+      where: {
+        email,
+      },
+      update: {
+        auth0Sub: authUserId,
+      },
+      create: {
+        auth0Sub: authUserId,
+        email,
+        role: UserRole.CLIENT,
+      },
+    });
+
     return null;
   }
 

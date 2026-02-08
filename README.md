@@ -85,6 +85,7 @@ Public:
 - `/`
 - `/alogin`
 - `/login`
+- `/signup`
 - `/logout`
 - `/not-authorized`
 

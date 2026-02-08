@@ -2,17 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentAppUser, getCurrentAuthSessionUser } from "@/lib/auth/session";
+import { signupWithPasswordAction } from "@/app/login/actions";
 
-import { loginWithPasswordAction } from "./actions";
-
-type LoginPageProps = {
+type SignupPageProps = {
   searchParams: Promise<{
     error?: string;
-    success?: string;
   }>;
 };
 
-export default async function LoginPage({ searchParams }: LoginPageProps) {
+export default async function SignupPage({ searchParams }: SignupPageProps) {
   const params = await searchParams;
   const sessionUser = await getCurrentAuthSessionUser();
 
@@ -22,15 +20,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   const error = typeof params.error === "string" ? params.error : null;
-  const success = typeof params.success === "string" ? params.success : null;
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Guluzada Studio</p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Client Portal Login</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Create Client Account</h1>
         <p className="mt-3 text-sm text-slate-600">
-          Sign in to access your domains, hosting credentials, and project documents.
+          Create your account. If your account is not yet linked to a client profile, admin can assign it after sign-up.
         </p>
 
         {error && (
@@ -39,13 +36,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
         )}
 
-        {success && (
-          <div className="mt-4 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {success}
-          </div>
-        )}
-
-        <form action={loginWithPasswordAction} className="mt-6 space-y-3">
+        <form action={signupWithPasswordAction} className="mt-6 space-y-3">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
               Email
@@ -69,7 +60,21 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               name="password"
               type="password"
               required
-              autoComplete="current-password"
+              autoComplete="new-password"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-slate-700">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              autoComplete="new-password"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
           </div>
@@ -78,25 +83,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             type="submit"
             className="block w-full rounded-lg bg-slate-900 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-slate-700"
           >
-            Sign In
+            Create Account
           </button>
         </form>
 
-        <Link href="/alogin" className="mt-3 block text-center text-sm text-slate-600 hover:text-slate-900">
-          Admin login
+        <Link href="/login" className="mt-3 block text-center text-sm text-slate-600 hover:text-slate-900">
+          Back to login
         </Link>
-
-        <Link href="/signup" className="mt-3 block text-center text-sm text-slate-600 hover:text-slate-900">
-          Create account
-        </Link>
-
-        <Link href="/" className="mt-3 block text-center text-sm text-slate-600 hover:text-slate-900">
-          Back to portal
-        </Link>
-
-        <p className="mt-5 text-xs text-slate-500">
-          Admin access is granted by <code>ADMIN_EMAILS</code> or user metadata role <code>admin</code>.
-        </p>
       </div>
     </main>
   );
