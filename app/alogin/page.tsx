@@ -1,23 +1,28 @@
 import Link from "next/link";
+import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 import { getCurrentAppUser, getCurrentAuthSessionUser } from "@/lib/auth/session";
+import { adminLoginWithPasswordAction } from "@/app/login/actions";
 
-import { loginWithPasswordAction } from "./actions";
-
-type LoginPageProps = {
+type AdminLoginPageProps = {
   searchParams: Promise<{
     error?: string;
   }>;
 };
 
-export default async function LoginPage({ searchParams }: LoginPageProps) {
+export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
   const params = await searchParams;
   const sessionUser = await getCurrentAuthSessionUser();
 
   if (sessionUser) {
     const appUser = await getCurrentAppUser();
-    redirect(appUser ? "/dashboard" : "/not-authorized");
+
+    if (!appUser) {
+      redirect("/not-authorized");
+    }
+
+    redirect(appUser.role === UserRole.ADMIN ? "/admin" : "/dashboard");
   }
 
   const error = typeof params.error === "string" ? params.error : null;
@@ -26,9 +31,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Guluzada Studio</p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Client Portal Login</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Admin Login</h1>
         <p className="mt-3 text-sm text-slate-600">
-          Sign in to access your domains, hosting credentials, and project documents.
+          Sign in with an admin account to access client and user management.
         </p>
 
         {error && (
@@ -37,10 +42,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
         )}
 
-        <form action={loginWithPasswordAction} className="mt-6 space-y-3">
+        <form action={adminLoginWithPasswordAction} className="mt-6 space-y-3">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
-              Email
+              Admin Email
             </label>
             <input
               id="email"
@@ -70,21 +75,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             type="submit"
             className="block w-full rounded-lg bg-slate-900 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-slate-700"
           >
-            Sign In
+            Sign In as Admin
           </button>
         </form>
 
-        <Link href="/alogin" className="mt-3 block text-center text-sm text-slate-600 hover:text-slate-900">
-          Admin login
+        <Link href="/login" className="mt-3 block text-center text-sm text-slate-600 hover:text-slate-900">
+          Client login
         </Link>
-
-        <Link href="/" className="mt-3 block text-center text-sm text-slate-600 hover:text-slate-900">
-          Back to portal
-        </Link>
-
-        <p className="mt-5 text-xs text-slate-500">
-          Admin access is granted by <code>ADMIN_EMAILS</code> or user metadata role <code>admin</code>.
-        </p>
       </div>
     </main>
   );

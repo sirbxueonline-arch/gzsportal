@@ -83,6 +83,7 @@ App runs at `http://localhost:3000`.
 
 Public:
 - `/`
+- `/alogin`
 - `/login`
 - `/logout`
 - `/not-authorized`
