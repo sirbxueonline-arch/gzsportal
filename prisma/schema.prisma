@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT
+}
+
+enum TicketStatus {
+  OPEN
+  CLOSED
+}
+
+enum SecretAccessAction {
+  REVEAL
+}
+
+model User {
+  id               String            @id @default(uuid()) @db.Uuid
+  auth0Sub         String?           @unique
+  email            String            @unique
+  role             UserRole          @default(CLIENT)
+  clientId         String?           @db.Uuid
+  client           Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  secretAccessLogs SecretAccessLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([clientId])
+}
+
+model Client {
+  id             String          @id @default(uuid()) @db.Uuid
+  name           String
+  company        String?
+  emailPrimary   String
+  phone          String?
+  notes          String?
+  users          User[]
+  domains        Domain[]
+  hosting        Hosting[]
+  documents      Document[]
+  supportTickets SupportTicket[]
+  invites        ClientInvite[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Domain {
+  id           String      @id @default(uuid()) @db.Uuid
+  clientId     String      @db.Uuid
+  client       Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  domainName   String
+  registrar    String
+  expiryDate   DateTime?
+  autoRenew    Boolean?
+  nameservers  String      @db.Text
+  loginUrl     String?
+  credentialId String?     @db.Uuid
+  credential   Credential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([clientId])
+  @@index([credentialId])
+}
+
+model Hosting {
+  id              String      @id @default(uuid()) @db.Uuid
+  clientId        String      @db.Uuid
+  client          Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  provider        String
+  plan            String?
+  renewalDate     DateTime?
+  region          String?
+  controlPanelUrl String?
+  credentialId    String?     @db.Uuid
+  credential      Credential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([clientId])
+  @@index([credentialId])
+}
+
+model Credential {
+  id              String            @id @default(uuid()) @db.Uuid
+  label           String
+  username        String?
+  encryptedSecret String            @db.Text
+  iv              String            @db.Text
+  authTag         String            @db.Text
+  domains         Domain[]
+  hosting         Hosting[]
+  accessLogs      SecretAccessLog[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model Document {
+  id          String   @id @default(uuid()) @db.Uuid
+  clientId    String   @db.Uuid
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title       String
+  storagePath String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clientId])
+}
+
+model SupportTicket {
+  id        String       @id @default(uuid()) @db.Uuid
+  clientId  String       @db.Uuid
+  client    Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+}
+
+model SecretAccessLog {
+  id           String             @id @default(uuid()) @db.Uuid
+  userId       String             @db.Uuid
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String             @db.Uuid
+  credential   Credential         @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  action       SecretAccessAction @default(REVEAL)
+  createdAt    DateTime           @default(now())
+
+  @@index([userId])
+  @@index([credentialId])
+}
+
+model ClientInvite {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String
+  clientId  String    @db.Uuid
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+  @@index([clientId])
+}
