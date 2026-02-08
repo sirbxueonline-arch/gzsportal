@@ -25,7 +25,10 @@ Production-oriented client portal for sharing domain and hosting credentials sec
 ## 1. Supabase Setup
 
 1. Create a Supabase project.
-2. Copy the Postgres connection string into `DATABASE_URL`.
+2. Copy a Postgres connection string into `DATABASE_URL`.
+   - If you are deploying to Vercel (IPv4) you must use the Supabase **Session pooler** connection string (the direct
+     `db.<project-ref>.supabase.co:5432` host is IPv6-only unless you buy the IPv4 add-on).
+   - Pooler usernames must include your project ref, for example: `postgres.grlcnkuvgyxvabuexjsb`
 3. In Storage, create a private bucket named `client-documents`.
 4. In Authentication, enable Email provider (email/password login).
 5. Copy:
@@ -36,6 +39,17 @@ Production-oriented client portal for sharing domain and hosting credentials sec
 ## 2. Environment Variables
 
 Copy `.env.example` to `.env.local` and fill values.
+
+### Supabase `DATABASE_URL` Notes (Important)
+
+- Find your **project ref** in the Supabase Dashboard URL:
+  - Example: `https://supabase.com/dashboard/project/<project-ref>/...`
+- If your DB password contains special characters, URL-encode it.
+- Example Session Pooler format:
+
+```text
+DATABASE_URL=postgresql://postgres.<project-ref>:<url-encoded-password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+```
 
 Generate `ENCRYPTION_KEY` as 32-byte base64, example:
 
