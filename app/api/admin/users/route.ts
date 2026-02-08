@@ -2,7 +2,7 @@ import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { upsertAuth0DatabaseUserWithPassword } from "@/lib/auth/auth0-management";
+import { upsertSupabaseUserWithPassword } from "@/lib/auth/supabase-management";
 import { getCurrentAppUser } from "@/lib/auth/session";
 import { jsonError, normalizeEmail } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
@@ -30,16 +30,16 @@ export async function POST(request: Request) {
   }
 
   const email = normalizeEmail(parsed.data.email);
-  let auth0Sub: string | null = null;
+  let authUserId: string | null = null;
 
   if (parsed.data.password) {
     try {
-      auth0Sub = await upsertAuth0DatabaseUserWithPassword(email, parsed.data.password);
+      authUserId = await upsertSupabaseUserWithPassword(email, parsed.data.password);
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "Could not provision the Auth0 account for this user.";
+          : "Could not provision the Supabase Auth account for this user.";
 
       return jsonError(message, 400);
     }
@@ -52,13 +52,13 @@ export async function POST(request: Request) {
     update: {
       role: parsed.data.role,
       clientId: parsed.data.role === "ADMIN" ? null : parsed.data.clientId,
-      ...(auth0Sub ? { auth0Sub } : {}),
+      ...(authUserId ? { auth0Sub: authUserId } : {}),
     },
     create: {
       email,
       role: parsed.data.role,
       clientId: parsed.data.role === "ADMIN" ? null : parsed.data.clientId,
-      auth0Sub,
+      auth0Sub: authUserId,
     },
   });
 
@@ -66,6 +66,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     id: createdUser.id,
-    auth0Provisioned: Boolean(parsed.data.password),
+    authProvisioned: Boolean(parsed.data.password),
   });
 }

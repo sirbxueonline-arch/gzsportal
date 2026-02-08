@@ -5,7 +5,7 @@ Production-oriented client portal for sharing domain and hosting credentials sec
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind CSS
-- Auth0 (`@auth0/nextjs-auth0`) for authentication/session
+- Supabase Auth (email/password) for authentication/session
 - Supabase Postgres (via Prisma) for app data
 - Supabase Storage for private documents
 - AES-256-GCM secret encryption (`node:crypto`)
@@ -13,7 +13,7 @@ Production-oriented client portal for sharing domain and hosting credentials sec
 
 ## What Is Implemented
 
-- Auth0 login/logout and session middleware (`proxy.ts`)
+- Supabase Auth login/logout and session refresh middleware (`proxy.ts`)
 - Role-aware access model (`ADMIN` vs `CLIENT`)
 - Per-client data isolation for client users
 - Prisma schema + migration for all required models
@@ -27,34 +27,13 @@ Production-oriented client portal for sharing domain and hosting credentials sec
 1. Create a Supabase project.
 2. Copy the Postgres connection string into `DATABASE_URL`.
 3. In Storage, create a private bucket named `client-documents`.
-4. Copy:
+4. In Authentication, enable Email provider (email/password login).
+5. Copy:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `SUPABASE_ANON_KEY`
 
-## 2. Auth0 Setup
-
-1. Create a **Regular Web Application** in Auth0.
-2. Configure callback/logout URLs for local development:
-   - Allowed Callback URLs: `http://localhost:3000/auth/callback`
-   - Allowed Logout URLs: `http://localhost:3000`
-3. Copy and set:
-   - `AUTH0_ISSUER_BASE_URL`
-   - `AUTH0_CLIENT_ID`
-   - `AUTH0_CLIENT_SECRET`
-   - `AUTH0_SECRET`
-4. Set `AUTH0_BASE_URL=http://localhost:3000` for local.
-5. (Optional for admin password provisioning) Create a **Machine to Machine** app authorized for Auth0 Management API with scopes:
-   - `read:users`
-   - `create:users`
-   - `update:users`
-6. Set:
-   - `AUTH0_M2M_CLIENT_ID`
-   - `AUTH0_M2M_CLIENT_SECRET`
-   - `AUTH0_DB_CONNECTION` (example: `Username-Password-Authentication`)
-   - `AUTH0_MANAGEMENT_AUDIENCE` (optional, defaults to `${AUTH0_ISSUER_BASE_URL}/api/v2/`)
-
-## 3. Environment Variables
+## 2. Environment Variables
 
 Copy `.env.example` to `.env.local` and fill values.
 
@@ -66,9 +45,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 Set `ADMIN_EMAILS` as comma-separated admin emails.
 
-If you want admin to create/update Auth0 passwords from `/admin/users`, configure the Auth0 Management API variables above.
-
-## 4. Install and Run Locally
+## 3. Install and Run Locally
 
 ```bash
 npm install
@@ -79,22 +56,21 @@ npm run dev
 
 App runs at `http://localhost:3000`.
 
-## 5. Deployment (Vercel)
+## 4. Deployment (Vercel)
 
-1. Push this `portal/` app to your Git repository.
-2. Create a Vercel project pointing to this folder.
+1. Push this app to your Git repository.
+2. Create a Vercel project pointing to this repository.
 3. Add all env vars from `.env.example` in Vercel project settings.
 4. Ensure Supabase bucket `client-documents` exists and is private.
 5. Deploy.
 
-## 6. Connect `portal.guluzada.dev`
+## 5. Connect `portal.guluzada.dev`
 
 1. In Vercel project domains, add `portal.guluzada.dev`.
 2. In DNS provider, create CNAME for `portal` to Vercel target.
-3. Update Auth0 app settings:
-   - Allowed Callback URLs includes `https://portal.guluzada.dev/auth/callback`
-   - Allowed Logout URLs includes `https://portal.guluzada.dev`
-4. Set `AUTH0_BASE_URL=https://portal.guluzada.dev` in production env vars.
+3. In Supabase Authentication URL config, add:
+   - Site URL: `https://portal.guluzada.dev`
+   - Redirect URL: `https://portal.guluzada.dev`
 
 ## Security Notes
 

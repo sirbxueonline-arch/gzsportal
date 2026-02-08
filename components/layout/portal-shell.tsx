@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { UserRole } from "@prisma/client";
 
 import type { AppUser } from "@/lib/auth/session";
@@ -48,12 +47,12 @@ export function PortalShell({ user, children }: PortalShellProps) {
           <div className="mt-8 border-t border-slate-200 pt-4 text-sm text-slate-600">
             <p className="truncate font-medium text-slate-900">{user.email}</p>
             <p className="mt-1">Role: {user.role}</p>
-            <Link
-              href="/auth/logout"
+            <a
+              href="/logout"
               className="mt-4 inline-flex rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
             >
               Log out
-            </Link>
+            </a>
           </div>
         </aside>
 

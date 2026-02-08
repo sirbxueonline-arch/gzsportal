@@ -1,7 +1,9 @@
-import { auth0 } from "@/lib/auth0";
+import type { NextRequest } from "next/server";
 
-export async function proxy(request: Request) {
-  return auth0.middleware(request);
+import { refreshSupabaseAuthSession } from "@/lib/supabase-auth";
+
+export async function proxy(request: NextRequest) {
+  return refreshSupabaseAuthSession(request);
 }
 
 export const config = {

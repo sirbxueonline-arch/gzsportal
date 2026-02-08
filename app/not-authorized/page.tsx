@@ -8,7 +8,7 @@ export default function NotAuthorizedPage() {
         </p>
         <div className="mt-6 flex gap-3">
           <a
-            href="/auth/logout"
+            href="/logout"
             className="rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800"
           >
             Log out

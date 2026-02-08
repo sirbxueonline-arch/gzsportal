@@ -37,7 +37,7 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">Users</h1>
-        <p className="text-sm text-slate-600">Manage role, client assignment, and Auth0 account linking.</p>
+        <p className="text-sm text-slate-600">Manage role, client assignment, and authentication account linking.</p>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
@@ -56,7 +56,7 @@ export default async function AdminUsersPage() {
                   <tr key={user.id}>
                     <td className="px-3 py-2">
                       <p className="font-medium text-slate-900">{user.email}</p>
-                      <p className="text-xs text-slate-500">Auth0 Sub: {user.auth0Sub ?? "Not linked yet"}</p>
+                      <p className="text-xs text-slate-500">Auth User ID: {user.auth0Sub ?? "Not linked yet"}</p>
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-600">
                       {user.role}

@@ -1,25 +1,22 @@
 import { UserRole, type User } from "@prisma/client";
 import { redirect } from "next/navigation";
 
-import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/prisma";
+import { getCurrentSupabaseAuthUser } from "@/lib/supabase-auth";
 
 type SessionUser = {
-  sub?: string;
-  email?: string;
+  id: string;
+  email?: string | null;
   app_metadata?: {
+    role?: string;
+  };
+  user_metadata?: {
     role?: string;
   };
   [key: string]: unknown;
 };
 
 export type AppUser = Pick<User, "id" | "email" | "role" | "clientId" | "auth0Sub">;
-
-const ADMIN_ROLE_CLAIMS = [
-  "https://guluzada.dev/role",
-  "https://guluzada.dev/app_metadata_role",
-  "role",
-] as const;
 
 function getAdminEmailSet(): Set<string> {
   const raw = process.env.ADMIN_EMAILS ?? "";
@@ -37,14 +34,15 @@ function hasAdminMetadata(user: SessionUser): boolean {
     return true;
   }
 
-  return ADMIN_ROLE_CLAIMS.some((claim) => {
-    const value = user[claim];
+  if (user.user_metadata?.role?.toLowerCase() === "admin") {
+    return true;
+  }
 
-    return typeof value === "string" && value.toLowerCase() === "admin";
-  });
+  const role = user.role;
+  return typeof role === "string" && role.toLowerCase() === "admin";
 }
 
-function normalizeEmail(value?: string): string | null {
+function normalizeEmail(value?: string | null): string | null {
   if (!value) {
     return null;
   }
@@ -66,9 +64,9 @@ function toAppUser(user: User): AppUser {
 
 async function resolveUserFromSession(sessionUser: SessionUser): Promise<AppUser | null> {
   const email = normalizeEmail(sessionUser.email);
-  const auth0Sub = typeof sessionUser.sub === "string" ? sessionUser.sub : null;
+  const authUserId = typeof sessionUser.id === "string" ? sessionUser.id : null;
 
-  if (!email || !auth0Sub) {
+  if (!email || !authUserId) {
     return null;
   }
 
@@ -77,7 +75,7 @@ async function resolveUserFromSession(sessionUser: SessionUser): Promise<AppUser
 
   let user = await prisma.user.findUnique({
     where: {
-      auth0Sub,
+      auth0Sub: authUserId,
     },
   });
 
@@ -98,7 +96,7 @@ async function resolveUserFromSession(sessionUser: SessionUser): Promise<AppUser
         id: user.id,
       },
       data: {
-        auth0Sub,
+        auth0Sub: authUserId,
         email,
         role: nextRole,
         clientId: nextClientId,
@@ -115,7 +113,7 @@ async function resolveUserFromSession(sessionUser: SessionUser): Promise<AppUser
   if (shouldBeAdmin) {
     const createdAdmin = await prisma.user.create({
       data: {
-        auth0Sub,
+        auth0Sub: authUserId,
         email,
         role: UserRole.ADMIN,
       },
@@ -144,7 +142,7 @@ async function resolveUserFromSession(sessionUser: SessionUser): Promise<AppUser
   const createdClientUser = await prisma.$transaction(async (tx) => {
     const newUser = await tx.user.create({
       data: {
-        auth0Sub,
+        auth0Sub: authUserId,
         email,
         role: UserRole.CLIENT,
         clientId: invite.clientId,
@@ -166,24 +164,45 @@ async function resolveUserFromSession(sessionUser: SessionUser): Promise<AppUser
   return toAppUser(createdClientUser);
 }
 
-export async function getCurrentAppUser(): Promise<AppUser | null> {
-  const session = await auth0.getSession();
+export async function getCurrentAuthSessionUser(): Promise<SessionUser | null> {
+  const user = await getCurrentSupabaseAuthUser();
 
-  if (!session?.user) {
+  if (!user) {
     return null;
   }
 
-  return resolveUserFromSession(session.user as SessionUser);
+  return {
+    id: user.id,
+    email: user.email,
+    app_metadata:
+      typeof user.app_metadata === "object" && user.app_metadata
+        ? (user.app_metadata as SessionUser["app_metadata"])
+        : undefined,
+    user_metadata:
+      typeof user.user_metadata === "object" && user.user_metadata
+        ? (user.user_metadata as SessionUser["user_metadata"])
+        : undefined,
+  };
+}
+
+export async function getCurrentAppUser(): Promise<AppUser | null> {
+  const sessionUser = await getCurrentAuthSessionUser();
+
+  if (!sessionUser) {
+    return null;
+  }
+
+  return resolveUserFromSession(sessionUser);
 }
 
 export async function requireAppUser(options?: { adminOnly?: boolean }): Promise<AppUser> {
-  const session = await auth0.getSession();
+  const sessionUser = await getCurrentAuthSessionUser();
 
-  if (!session?.user) {
-    redirect("/auth/login");
+  if (!sessionUser) {
+    redirect("/login");
   }
 
-  const appUser = await resolveUserFromSession(session.user as SessionUser);
+  const appUser = await resolveUserFromSession(sessionUser);
 
   if (!appUser) {
     redirect("/not-authorized");

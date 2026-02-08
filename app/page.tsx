@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
 
-import { auth0 } from "@/lib/auth0";
-import { getCurrentAppUser } from "@/lib/auth/session";
+import { getCurrentAppUser, getCurrentAuthSessionUser } from "@/lib/auth/session";
 
 export default async function HomePage() {
-  const session = await auth0.getSession();
+  const sessionUser = await getCurrentAuthSessionUser();
 
-  if (!session?.user) {
+  if (!sessionUser) {
     redirect("/login");
   }
 

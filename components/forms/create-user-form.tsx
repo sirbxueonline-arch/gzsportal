@@ -59,8 +59,8 @@ export function CreateUserForm({ clients }: CreateUserFormProps) {
     }
 
     setSuccess(
-      payload.auth0Provisioned
-        ? "User saved and Auth0 password account provisioned."
+      payload.authProvisioned
+        ? "User saved and Supabase Auth password account provisioned."
         : "User saved.",
     );
     reset({ email: "", role: "CLIENT", clientId: clients[0]?.id, password: "" });
@@ -84,7 +84,7 @@ export function CreateUserForm({ clients }: CreateUserFormProps) {
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
         />
         <p className="mt-1 text-xs text-slate-500">
-          If provided, the portal creates or updates this user in Auth0 database connection.
+          If provided, the portal creates or updates this user in Supabase Auth.
         </p>
         {errors.password && <p className="mt-1 text-sm text-rose-700">{errors.password.message}</p>}
       </div>
